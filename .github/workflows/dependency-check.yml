@@ -1,0 +1,50 @@
+name: Dependency Check
+
+on:
+  workflow_call:
+    inputs:
+      args:
+        required: true
+        type: string
+
+jobs:
+  depchecktest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Dependency Check
+        uses: 'docker://owasp/dependency-check-action:latest'
+        with:
+          args: >
+            --out /github/workspace/reports
+            --failOnCVSS 0
+            --enableExperimental
+            --format HTML
+            --format JSON
+            --noupdate
+            ${{ inputs.args }}
+      - name: Upload Test results
+        if: always()
+        uses: actions/upload-artifact@master
+        with:
+          name: Dependency Check Report
+          path: ${{github.workspace}}/reports
+          retention-days: 400
+      - name: pwd and ls
+        if: always()
+        run: |
+          pwd
+          ls
+      - name: echo env
+        if: always()
+        run: |
+          echo ${{ github }}
+      - name: ls reports
+        if: always()
+        run: |
+          ls reports/
+      - name: show json report
+        if: always()
+        run: |
+          cat ${{github.workspace}}/reports/dependency-check-report.json | jq .
